@@ -1,0 +1,64 @@
+import csv
+
+
+def load_SampleStore(csv_file):
+    rows = []
+    with open(csv_file, newline="", encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            state = (r.get("State") or "").strip()
+            cat   = (r.get("Category") or "").strip()
+            try:
+                sales = float(r.get("Sales") or 0)
+            except ValueError:
+                sales = 0.0
+            rows.append({"State": state, "Category": cat, "Sales": sales})
+    return rows
+
+
+def percent(part, whole):
+    if whole == 0:
+        return 0.0
+    return (part / whole) * 100
+
+def calculate_percentages(sales):
+    totals = {}
+    tech   = {}
+    for r in sales:
+        s = r["State"]
+        c = r["Category"].lower()
+        v = r["Sales"]
+        totals[s] = totals.get(s, 0) + v
+        if c == "technology":
+            tech[s] = tech.get(s, 0) + v
+
+    out = {}
+    for s in totals:
+        out[s] = round(percent(tech.get(s, 0), totals[s]), 2)
+    return out
+
+
+def find_extremes(percentages):
+    if not percentages:
+        return (("", 0.0), ("", 0.0))
+    items = sorted(percentages.items(), key=lambda x: x[1])
+    return items[0], items[-1]
+
+def main():
+    
+    data = load_SampleStore("SampleSuperstore.csv")
+
+    pct_by_state = calculate_percentages(data)
+    low, high = find_extremes(pct_by_state)
+
+    print("Highest Percentage of Technology sales by State:", high[0], f"{high[1]}%")
+    print("Lowest Percentage of Technology sales by State:", low[0],  f"{low[1]}%")
+
+    
+    with open("technology_share_by_state.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["State", "Percent_Technology_Sales"])
+        for s, p in sorted(pct_by_state.items(), key=lambda x: x[1], reverse=True):
+            w.writerow([s, p])
+
+if __name__ == "__main__":
+    main()
