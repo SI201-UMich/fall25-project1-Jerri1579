@@ -25,7 +25,7 @@ def calculate_percentages(sales):
     tech   = {}
     for r in sales:
         s = r["State"]
-        c = r["Category"].lower()
+        c = r["Category"].lower().strip()
         v = r["Sales"]
         totals[s] = totals.get(s, 0) + v
         if c == "technology":
@@ -38,22 +38,29 @@ def calculate_percentages(sales):
 
 
 def find_extremes(percentages):
+    """
+    Return ((lowest_pct, [states...]), (highest_pct, [states...])) including ties.
+    """
     if not percentages:
-        return (("", 0.0), ("", 0.0))
-    items = sorted(percentages.items(), key=lambda x: x[1])
-    return items[0], items[-1]
+        return (0.0, []), (0.0, [])
+    values = list(percentages.values())
+    lo = min(values)
+    hi = max(values)
+    low_states  = sorted([s for s, p in percentages.items() if p == lo])
+    high_states = sorted([s for s, p in percentages.items() if p == hi])
+    return (lo, low_states), (hi, high_states)
 
 def main():
-    
     data = load_SampleStore("SampleSuperstore.csv")
 
     pct_by_state = calculate_percentages(data)
-    low, high = find_extremes(pct_by_state)
+    (low_pct, low_states), (high_pct, high_states) = find_extremes(pct_by_state)
 
-    print("Highest Percentage of Technology sales by State:", high[0], f"{high[1]}%")
-    print("Lowest Percentage of Technology sales by State:", low[0],  f"{low[1]}%")
+    print("Highest Percentage of Technology sales by State:",
+          ", ".join(high_states), f"{high_pct}%")
+    print("Lowest Percentage of Technology sales by State:",
+          ", ".join(low_states),  f"{low_pct}%")
 
-    
     with open("technology_share_by_state.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["State", "Percent_Technology_Sales"])
@@ -62,3 +69,53 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ---------- Tests (exactly 4) ----------
+import unittest, csv, os
+
+class TestProjectMinimal(unittest.TestCase):
+    def test_percent_zero_whole(self):
+        self.assertEqual(percent(5, 0), 0.0)
+
+    def test_calculate_percentages_basic(self):
+        rows = [
+            {"State": "MI", "Category": "Technology", "Sales": 100.0},
+            {"State": "MI", "Category": "Furniture",  "Sales": 100.0},
+            {"State": "OH", "Category": "Office Supplies", "Sales": 50.0},
+        ]
+        out = calculate_percentages(rows)
+        # MI: 100 tech / 200 total = 50.00; OH: 0 / 50 = 0.00
+        self.assertEqual(out["MI"], 50.00)
+        self.assertEqual(out["OH"], 0.00)
+
+    def test_find_extremes_ties(self):
+        percentages = {"A": 0.0, "B": 25.0, "C": 0.0, "D": 25.0}
+        (lo_pct, lo_states), (hi_pct, hi_states) = find_extremes(percentages)
+        self.assertEqual(lo_pct, 0.0)
+        self.assertListEqual(lo_states, ["A", "C"])
+        self.assertEqual(hi_pct, 25.0)
+        self.assertListEqual(hi_states, ["B", "D"])
+
+    def test_load_SampleStore_dictreader(self):
+        # tiny CSV to ensure DictReader path works
+        path = "_tmp_sample.csv"
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["State", "Category", "Sales"])
+            w.writerow(["CA", "Technology", "12.5"])
+            w.writerow(["CA", "Furniture",  "7.5"])
+        try:
+            rows = load_SampleStore(path)
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0]["State"], "CA")
+            self.assertEqual(rows[0]["Category"], "Technology")
+            self.assertIsInstance(rows[0]["Sales"], float)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
+
+
+
+
