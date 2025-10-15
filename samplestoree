@@ -1,3 +1,12 @@
+# SI 201 HW4
+# Your name: Jerri Boyd
+# Your student id: 11704225
+# Your email: jerrib@umich.edu
+# Who or what you worked with on this homework (including generative AI like ChatGPT):
+# If you worked with generative AI also add a statement for how you used it.  
+# e.g.: 
+# Asked Chatgpt hints for debugging and suggesting the general sturcture of the code
+# I asked chat for help with my functions and test case.
 import csv
 
 
@@ -71,7 +80,7 @@ if __name__ == "__main__":
     main()
 
 
-# ---------- Tests (exactly 4) ----------
+
 import unittest, csv, os
 
 class TestProjectMinimal(unittest.TestCase):
@@ -85,7 +94,7 @@ class TestProjectMinimal(unittest.TestCase):
             {"State": "OH", "Category": "Office Supplies", "Sales": 50.0},
         ]
         out = calculate_percentages(rows)
-        # MI: 100 tech / 200 total = 50.00; OH: 0 / 50 = 0.00
+        
         self.assertEqual(out["MI"], 50.00)
         self.assertEqual(out["OH"], 0.00)
 
@@ -98,7 +107,7 @@ class TestProjectMinimal(unittest.TestCase):
         self.assertListEqual(hi_states, ["B", "D"])
 
     def test_load_SampleStore_dictreader(self):
-        # tiny CSV to ensure DictReader path works
+       
         path = "_tmp_sample.csv"
         with open(path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
